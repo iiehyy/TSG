@@ -4,11 +4,9 @@ IEEE Transactions on Networking*
 
 Directory Structure
 
-- data  
-  -Stores all datasets, including raw data, augmented data, geographical graphs, training graph data, and test graph data.
+- data: Stores all datasets, including raw data, augmented data, geographical graphs, training graph data, and test graph data.
 
-- model
-  -Stores model parameters.
+- model: Stores model parameters.
 
 - lib
   - LNGeoAugment: Generates augmented data for training and testing.
