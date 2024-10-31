@@ -54,7 +54,6 @@ def process_augment(region):
         os.makedirs(outpath)
     df = pd.read_csv(inputpath)
     ips = set(df['IP'].unique())  # 所有的独特IP地址
-
     # 分别获取已经有效处理的IP和需要重新处理的IP
     valid_ips= validate_files(outpath)
     ips_to_process = ips - set(valid_ips)
@@ -93,10 +92,7 @@ def process_bound(region):
     for result in results:
         if not result.successful():
             print("Some tasks did not complete successfully")
-    '''
-    for ip in process_ip:
-        GeoHashMap.get_boundary(ip,inputpath,outpath)
-    '''
+            
 def process_graph(region):
     date_interval=7
     path_aug='data/'+region+'/augment_data'
@@ -127,8 +123,6 @@ def check_graph_edges(outpath):
     # 遍历保存的所有 .pt 文件
     for f in os.listdir(outpath):
         ip = ".".join(f.split(".")[0:4])
-        if ip!="124.16.5.132" or ip!="61.143.53.34":
-            continue
         file_path = os.path.join(outpath, f)
         c=0
         # 加载保存的图数据
@@ -192,11 +186,8 @@ def re_process():
             print(region, len(ip_list_with_no_edges))
 
 if __name__ == "__main__":
-    re_process()
-    '''
     regions = ["company", "cstnet","edu"]
     for region in regions:
         process_augment(region)
         process_bound(region)
         process_graph(region)
-    '''
