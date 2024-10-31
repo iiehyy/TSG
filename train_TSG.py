@@ -99,7 +99,7 @@ def cut_feature(data_graph,cut_list):
     return data_graph
 def TSG_Init():
     # 定义超参数
-    learning_rate = 3e-4
+    learning_rate = 0.01
     edge_dim = 1
     in_features = 17
     hidden_features = 512
@@ -110,35 +110,6 @@ def TSG_Init():
     model = TSG(edge_dim, in_features, hidden_features, out_features, dim_feedforward, num_heads, num_layers)
     optimizer = Adam(model.parameters(), lr=learning_rate, betas=(0.9, 0.99), weight_decay=5e-5)
     return model,optimizer
-def ST_GAT_Init(N_DAY_SLOT):
-    # 定义超参数
-    config = {
-        'BATCH_SIZE': 50,
-        'EPOCHS': 200,
-        'WEIGHT_DECAY': 5e-5,
-        'INITIAL_LR': 3e-4,
-        'N_PRED': 9,
-        'N_HIST': 7,
-        'DROPOUT': 0.2,
-        # If false, use GCN paper weight matrix, if true, use GAT paper weight matrix
-        'USE_GAT_WEIGHTS': True,
-        'N_NODE':N_DAY_SLOT,
-    }
-    # Number of possible windows in a day
-    model = ST_GAT(in_channels=config['N_HIST'], out_channels=config['N_PRED'], n_nodes=config['N_NODE'],dropout=config['DROPOUT'])
-    optimizer = Adam(model.parameters(), lr=config['INITIAL_LR'], weight_decay=config['WEIGHT_DECAY'])
-    return model,optimizer
-def social_stgcnn_Init():
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--n_stgcnn', type=int, default=1, help='Number of ST-GCNN layers')
-    parser.add_argument('--n_txpcnn', type=int, default=5, help='Number of TXPCNN layers')
-    parser.add_argument('--kernel_size', type=int, default=3)
-    parser.add_argument('--pred_seq_len', type=int, default=12)
-    parser.add_argument('--batch_size', type=int, default=128, help='minibatch size')
-    args = parser.parse_args()
-    # 定义超参数
-    model = social_stgcnn(n_stgcnn =args.n_stgcnn,n_txpcnn=args.n_txpcnn,kernel_size=args.kernel_size,pred_seq_len=args.pred_seq_len)
-    return model
 
 def train(ip, path_model, path_boundary, path_graph, path_model_manage, gpu_id, task_complete,models,test_path_graph):
             # 设置要使用的 GPU 编号
@@ -165,10 +136,6 @@ def train(ip, path_model, path_boundary, path_graph, path_model_manage, gpu_id, 
             test_dataloader = get_test_dataloader(test_graphdata, 1, daylength)
             if models=="TSG":
                 model,optimizer = TSG_Init()  # TransformerModel(num_features, hidden_dim, num_heads, num_layers)# 创建模型
-            if models == "ST_GAT":
-                model,optimizer = ST_GAT_Init(len(geolist))
-            if models == "social_stgcnn":
-                model,optimizer = social_stgcnn_Init()
             # 假设您的模型名为 SimpleModel
             model = model.to(device)
             # 打印每一层的参数形状
@@ -178,9 +145,6 @@ def train(ip, path_model, path_boundary, path_graph, path_model_manage, gpu_id, 
             min_median_error = float('inf')  # 初始化为无穷大
             for epoch in range(num_epochs):
                     model.train()
-                    if epoch>10 and loss < 10:
-                        learning_rate = 0.001
-                        optimizer = Adam(model.parameters(), lr=learning_rate)
                     for graphdics, current_labels, loaded_labels, loaded_masks,geo_point_list_train_dic in dataloader:
                             data_list=[]
                             for day in graphdics:
@@ -197,18 +161,13 @@ def train(ip, path_model, path_boundary, path_graph, path_model_manage, gpu_id, 
                                                lng_diff_mean)  # 先经纬度解码再计算预测和后一天定位误差
                             base_error = error(targets[:, 0, :], targets[:, 1, :], lat_mean, lng_mean, lat_diff_mean,
                                                lng_diff_mean)  # 先经纬度解码再计算今天和后一天定位误差
-                            print(ip + "_loss:", loss)
-                            print(ip + "_pred_error", pred_error)
-                            print(ip + "_base_error", base_error)
 
-                            '''
                             if step % 50 == 0:
                                 pred_error = error(out_pred, targets[:, 1, :], lat_mean, lng_mean, lat_diff_mean, lng_diff_mean)#先经纬度解码再计算预测和后一天定位误差
                                 base_error = error(targets[:, 0, :], targets[:, 1, :], lat_mean, lng_mean, lat_diff_mean,lng_diff_mean)#先经纬度解码再计算今天和后一天定位误差
                                 print(ip+"_loss:", loss)
                                 print(ip+"_pred_error", pred_error)
                                 print(ip+"_base_error", base_error)
-                            '''
                             step = step + 1
                     pred_error = error(out_pred, targets[:, 1, :], lat_mean, lng_mean, lat_diff_mean, lng_diff_mean)
                     loss_v = str(loss.cpu().item())
@@ -307,11 +266,10 @@ if __name__ == '__main__':
     # Setup paths and GPU information
     mp.set_start_method('spawn')  # 对于 PyTorch 和 CUDA 操作，通常需要 'spawn' 或 'forkserver'
     #regions = ["guangdong", "shaanxi", "hubei"]
-    #regions = ["edu","company","cstnet","guangdong", "shaanxi", "hubei"]
     regions=["guangdong"]
     models = "TSG"
     num_gpus = 4
-    ip_per_gpu = [2,0,2,0]  # 根据 GPU 的能力预先设定每个 GPU 可以处理的最大 IP 数量
+    ip_per_gpu = [2,2,2,2]  # 根据 GPU 的能力预先设定每个 GPU 可以处理的最大 IP 数量
     # Initialize paths and queues
     path_model_base = "model"
     path_data_base = "data"
@@ -333,7 +291,6 @@ if __name__ == '__main__':
         #iplist_t = [".".join(f.split(".")[0:4]) for f in os.listdir(path_aug) if os.path.isfile(os.path.join(path_aug, f))]
         iplist = [ip for ip in iplist_t if ip not in exit_ip]
         print(len(exit_ip),len(iplist))
-        iplist =["113.71.145.112","113.117.3.131","113.72.218.45","113.77.48.68","113.77.48.117","113.109.196.3"]
         ip_queue = Queue()
         for ip in iplist:
             ip_queue.put(ip)
