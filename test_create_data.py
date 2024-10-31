@@ -11,21 +11,6 @@ from datetime import datetime
 datelist = ["20230420","20230421","20230422","20230423","20230424","20230425","20230426","20230427","20230428","20230429","20230430","20230501",
                      "20230502","20230503","20230504","20230505","20230506","20230507","20230508","20230509","20230510","20230511",
                      "20230512","20230513","20230514","20230515","20230516","20230517","20230518","20230519"]
-datelist2=["20230609", "20230610", "20230611", "20230612", "20230613", "20230614", "20230615",
-"20230616", "20230617", "20230618", "20230619", "20230620", "20230621", "20230622",
-"20230623", "20230624", "20230625", "20230626", "20230627", "20230628", "20230629",
-"20230630", "20230701", "20230702", "20230703", "20230704", "20230705", "20230706",
-"20230707", "20230708", "20230709"]
-
-date_dic = {"edu": ['20230803', '20230804', '20230805', '20230806', '20230807', '20230808', '20230809', '20230810',
-                    '20230811', '20230812', '20230813', '20230814', '20230815', '20230816', '20230817', '20230818',
-                    '20230819', '20230820', '20230821', '20230822', '20230823', '20230824', '20230825', '20230826'],
-            "company": ['20230801', '20230802', '20230803', '20230804', '20230805', '20230806', '20230807', '20230808',
-                        '20230809', '20230810', '20230811', '20230812', '20230813', '20230814', '20230815', '20230816',
-                        '20230817', '20230818', '20230819', '20230820', '20230821', '20230822', '20230823', '20230824'],
-            "cstnet": ['20230804', '20230805', '20230806', '20230807', '20230808', '20230809', '20230810', '20230811',
-                       '20230812', '20230813', '20230814', '20230815', '20230816', '20230817', '20230818', '20230819',
-                       '20230820', '20230821', '20230822', '20230823', '20230824', '20230825', '20230826', '20230827']}
 def get_bound(bound):
     boundlist=bound.split("_")
     return boundlist
@@ -37,11 +22,6 @@ def get_aug(aug):
             auglist.append(d2)
         return auglist
 test_datelist=["20230520","20230521","20230522","20230523","20230524","20230525","20230526","20230527"]
-test_datelist2=["20230710","20230711","20230712","20230713","20230714","20230715","20230716"]
-test_date_dic={"edu":["20230827","20230828","20230829","20230830","20230831","20230901","20230902"],
-                "company":['20230825', '20230826', '20230827', '20230828', '20230829', '20230830', '20230831'],
-               "cstnet":['20230828', '20230829', '20230830', '20230831', '20230901', '20230902', '20230903']
-               }
 
 Base32 = '0123456789bcdefghjkmnpqrstuvwxyz'
 def calculate_distance(lat1, lon1, lat2, lon2):
@@ -93,16 +73,6 @@ def geohash_decode(code):
     lng = (longitudes[-1][0] + longitudes[-1][0]) / 2
     lat = (latitudes[-1][0] + latitudes[-1][0]) / 2
     return lat, lng
-def comparedate(date_str1,date_str2):
-    # 日期字符串
-    # 将字符串转换为日期对象
-    date1 = datetime.strptime(date_str1, "%Y%m%d").date()
-    date2 = datetime.strptime(date_str2, "%Y%m%d").date()
-    # 比较两个日期
-    if date1 > date2:
-        return True
-    else:
-        return False
 
 def process_test(s):
     s=s.split("_")
@@ -110,13 +80,7 @@ def process_test(s):
     for item in s:
         l=item.split(":")
         date=l[0]
-        date = test_date_dic[region].index(date)
-        '''
-        if comparedate(date, "20230709"):
-            date = test_datelist2.index(date)
-        else:
-            date = test_datelist.index(date)
-        '''
+        date = test_datelist.index(date)
         lat,lng=geohash_decode(l[1])
         dics[str(date)]=[lat,lng]
     return dics
@@ -148,13 +112,7 @@ def get_test(path,path_bound,outpath,region):
                 for geo in geolist:  # 遍历每一天
                     geo = geo.split(":")
                     date = geo[0] # 每一天
-                    date = date_dic[region].index(date)
-                    '''
-                    if comparedate(date,"20230608"):
-                        date = datelist2.index(date)
-                    else:
-                        date = datelist.index(date)
-                    '''
+                    date = datelist.index(date)
                     data = geo[1]  # 数据
                     data, data_center = process_geolist(data)  # 获取n天的点和中心
                     max_distance = random.uniform(0.05, 1)
@@ -181,13 +139,7 @@ def re_get_test(path,path_bound,outpath,iplist,max_distance,region):
                 for geo in geolist:  # 遍历每一天
                     geo = geo.split(":")
                     date = geo[0] # 每一天
-                    date = date_dic[region].index(date)
-                    '''
-                    if comparedate(date,"20230608"):
-                        date = datelist2.index(date)
-                    else:
-                        date = datelist.index(date)
-                    '''
+                    date = datelist.index(date)
                     data = geo[1]  # 数据
                     data, data_center = process_geolist(data)  # 获取n天的点和中心
                     points_data = data_augmentation(data, max_distance)
@@ -262,15 +214,9 @@ def check_graph_edges(outpath):
     # 遍历保存的所有 .pt 文件
     for f in os.listdir(outpath):
         ip = ".".join(f.split(".")[0:4])
-
-        if ip != "61.143.53.34":
-            continue
-
         file_path = os.path.join(outpath, f)
-
         # 加载保存的图数据
         train_list, label_list, padding_mask_list, current_label_list = torch.load(file_path)
-
         # 检查每个图的数据
         for data_list in train_list:
             for data in data_list:
@@ -280,7 +226,7 @@ def check_graph_edges(outpath):
                     print(f"IP {ip} has a graph with 0 edges.")
                     break  # 只需要记录一次即可，不用重复检查
     return ip_list_with_no_edges
-#regions = ["guangdong", "shaanxi", "hubei"]
+
 regions = ["company", "edu", "cstnet"]
 for region in regions:
     path=f'data/{region}/{region}.csv'
