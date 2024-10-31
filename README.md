@@ -19,6 +19,6 @@ Directory Structure
     
 - train_TSG: Multi-process training for the model.
 - test: Model testing.
-- train_create_data**: Generates training data.
-- test_create_data**: Generates test data.
+- train_create_data: Generates training data.
+- test_create_data: Generates test data.
 
